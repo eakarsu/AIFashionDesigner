@@ -247,6 +247,37 @@ const featureFields = {
       { key: 'occasion', label: 'Occasion', type: 'text', placeholder: 'e.g., Everyday, red carpet, casual' },
     ],
   },
+  'wardrobe-audit': {
+    columns: ['name', 'category', 'color', 'brand', 'season'],
+    fields: [
+      { key: 'name', label: 'Name', type: 'text' },
+      { key: 'category', label: 'Category', type: 'text' },
+      { key: 'color', label: 'Color', type: 'text' },
+      { key: 'brand', label: 'Brand', type: 'text' },
+      { key: 'season', label: 'Season', type: 'text' },
+    ],
+    aiFields: [
+      { key: 'lifestyle', label: 'Lifestyle', type: 'textarea', placeholder: 'e.g., remote worker, frequent traveller, parent of toddlers' },
+      { key: 'goals', label: 'Goals', type: 'textarea', placeholder: 'e.g., capsule wardrobe, more sustainable, declutter' },
+    ],
+  },
+  'personal-color': {
+    columns: ['name', 'primary_color', 'secondary_color', 'accent_color', 'season'],
+    fields: [
+      { key: 'name', label: 'Name', type: 'text' },
+      { key: 'primary_color', label: 'Primary Color', type: 'text' },
+      { key: 'secondary_color', label: 'Secondary Color', type: 'text' },
+      { key: 'accent_color', label: 'Accent Color', type: 'text' },
+      { key: 'season', label: 'Season', type: 'text' },
+    ],
+    aiFields: [
+      { key: 'skin_tone', label: 'Skin Tone', type: 'text', placeholder: 'e.g., fair, medium, olive, deep' },
+      { key: 'hair_color', label: 'Hair Color', type: 'text', placeholder: 'e.g., blonde, brunette, black, red' },
+      { key: 'eye_color', label: 'Eye Color', type: 'text', placeholder: 'e.g., blue, brown, green, hazel' },
+      { key: 'undertone', label: 'Undertone', type: 'text', placeholder: 'warm, cool, or neutral' },
+      { key: 'contrast_level', label: 'Contrast Level', type: 'text', placeholder: 'low, medium, or high' },
+    ],
+  },
 };
 
 function renderCellValue(key, value) {
@@ -308,20 +339,34 @@ export default function FeaturePage({ token, user, onLogout }) {
   const [aiResult, setAiResult] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const limit = 20;
 
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
   const fetchItems = useCallback(async () => {
     try {
-      const res = await fetch(`${API}${feature.endpoint}`, { headers: { Authorization: `Bearer ${token}` } });
+      setLoading(true);
+      const res = await fetch(`${API}${feature.endpoint}?page=${page}&limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       const data = await res.json();
-      if (Array.isArray(data)) setItems(data);
+      if (Array.isArray(data)) {
+        setItems(data);
+        setPagination({ page: 1, limit: data.length, total: data.length, totalPages: 1 });
+      } else if (data && Array.isArray(data.data)) {
+        setItems(data.data);
+        setPagination(data.pagination || { page, limit, total: data.data.length, totalPages: 1 });
+      } else {
+        setItems([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [feature?.endpoint, token]);
+  }, [feature?.endpoint, token, page]);
 
   useEffect(() => {
     if (feature) fetchItems();
@@ -384,8 +429,18 @@ export default function FeaturePage({ token, user, onLogout }) {
         method: 'POST', headers, body: JSON.stringify(aiInputs)
       });
       const data = await res.json();
-      if (data.result) setAiResult(data.result);
-      else if (data.error) setAiResult('Error: ' + data.error);
+      if (res.status === 503) {
+        setAiResult('AI service unavailable: ' + (data.error || 'API key not configured'));
+      } else if (data.result) {
+        setAiResult(data.result);
+      } else if (data.error) {
+        setAiResult('Error: ' + data.error);
+      } else if (data.raw) {
+        setAiResult(data.raw);
+      } else {
+        // Structured JSON response — render as pretty-printed JSON
+        setAiResult('```json\n' + JSON.stringify(data, null, 2) + '\n```');
+      }
     } catch (err) {
       setAiResult('Error: Could not connect to AI service');
     } finally {
@@ -471,7 +526,7 @@ export default function FeaturePage({ token, user, onLogout }) {
         {/* Data Table */}
         <div style={{ marginTop: 32 }}>
           <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, marginBottom: 4 }}>
-            All Items ({items.length})
+            All Items ({pagination.total})
           </h3>
         </div>
 
@@ -495,7 +550,7 @@ export default function FeaturePage({ token, user, onLogout }) {
             <tbody>
               {items.map((item, idx) => (
                 <tr key={item.id} onClick={() => openDetail(item)}>
-                  <td>{idx + 1}</td>
+                  <td>{(pagination.page - 1) * pagination.limit + idx + 1}</td>
                   {config.columns.map(col => (
                     <td key={col}>{renderCellValue(col, item[col])}</td>
                   ))}
@@ -503,6 +558,30 @@ export default function FeaturePage({ token, user, onLogout }) {
               ))}
             </tbody>
           </table>
+        )}
+
+        {pagination.totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, padding: 16 }}>
+            <button
+              className="btn btn-secondary btn-small"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              style={{ width: 'auto' }}
+            >
+              Prev
+            </button>
+            <span style={{ fontSize: 13 }}>
+              Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+            </span>
+            <button
+              className="btn btn-secondary btn-small"
+              disabled={page >= pagination.totalPages}
+              onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+              style={{ width: 'auto' }}
+            >
+              Next
+            </button>
+          </div>
         )}
       </div>
 

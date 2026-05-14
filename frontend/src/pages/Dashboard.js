@@ -19,6 +19,8 @@ const features = [
   { id: 'history', icon: '📚', title: 'Fashion History Explorer', desc: 'Explore fashion through the ages with AI-guided historical insights', endpoint: '/api/history', aiEndpoint: '/api/ai/fashion-history' },
   { id: 'sustainable', icon: '🌿', title: 'Sustainable Fashion', desc: 'Discover eco-friendly fashion choices with AI sustainability advice', endpoint: '/api/sustainable', aiEndpoint: '/api/ai/sustainable-advice' },
   { id: 'celebrity', icon: '🌟', title: 'Celebrity Style Match', desc: 'Recreate celebrity looks on any budget with AI styling guidance', endpoint: '/api/celebrity', aiEndpoint: '/api/ai/celebrity-style' },
+  { id: 'wardrobe-audit', icon: '🧹', title: 'Wardrobe Audit', desc: 'AI audit of your wardrobe with keep/donate/repair and gap analysis', endpoint: '/api/wardrobe', aiEndpoint: '/api/ai/wardrobe-audit' },
+  { id: 'personal-color', icon: '🎯', title: 'Personal Color Analysis', desc: 'AI seasonal color analysis from your skin, hair, and eye tones', endpoint: '/api/colors', aiEndpoint: '/api/ai/personal-color-analysis' },
 ];
 
 export { features };
@@ -29,11 +31,17 @@ export default function Dashboard({ user, token, onLogout }) {
 
   useEffect(() => {
     features.forEach(f => {
-      fetch(`${API}${f.endpoint}`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${API}${f.endpoint}?page=1&limit=1`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then(data => {
+          // Backend may return either a paginated envelope { data, pagination }
+          // or a raw array. Handle both shapes.
           if (Array.isArray(data)) {
             setCounts(prev => ({ ...prev, [f.id]: data.length }));
+          } else if (data && typeof data === 'object' && data.pagination) {
+            setCounts(prev => ({ ...prev, [f.id]: data.pagination.total }));
+          } else if (data && Array.isArray(data.data)) {
+            setCounts(prev => ({ ...prev, [f.id]: data.data.length }));
           }
         })
         .catch(() => {});
@@ -52,7 +60,7 @@ export default function Dashboard({ user, token, onLogout }) {
 
       <div className="dashboard-hero">
         <h2>Your AI-Powered Fashion Studio</h2>
-        <p>15 intelligent fashion tools at your fingertips. Design, analyze, and elevate your style with artificial intelligence.</p>
+        <p>17 intelligent fashion tools at your fingertips. Design, analyze, and elevate your style with artificial intelligence.</p>
       </div>
 
       <div className="feature-grid">

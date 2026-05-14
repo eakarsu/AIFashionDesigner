@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import FeaturePage from './pages/FeaturePage';
 import './App.css';
 
+import Batch03Features from './pages/Batch03Features';
+
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || 'null'));
@@ -27,6 +29,7 @@ function App() {
     <Router>
       <div className="app">
         <Routes>
+          <Route path="/batch03" element={<Batch03Features />} />
           <Route path="/login" element={
             token ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />
           } />

@@ -23,6 +23,7 @@ async function seed() {
 
     CREATE TABLE outfits (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
       occasion VARCHAR(255),
       style VARCHAR(255),
@@ -36,6 +37,7 @@ async function seed() {
 
     CREATE TABLE styles (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       category VARCHAR(255),
       description TEXT,
@@ -48,6 +50,7 @@ async function seed() {
 
     CREATE TABLE color_palettes (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       primary_color VARCHAR(50),
       secondary_color VARCHAR(50),
@@ -61,6 +64,7 @@ async function seed() {
 
     CREATE TABLE trends (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       category VARCHAR(255),
       season VARCHAR(100),
@@ -75,6 +79,7 @@ async function seed() {
 
     CREATE TABLE wardrobe (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
       category VARCHAR(255),
       color VARCHAR(100),
@@ -83,12 +88,15 @@ async function seed() {
       material VARCHAR(255),
       season VARCHAR(100),
       image_url VARCHAR(500),
+      purchase_price DECIMAL(10,2),
+      wear_count INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
 
     CREATE TABLE ratings (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       outfit_name VARCHAR(255) NOT NULL,
       occasion VARCHAR(255),
       overall_score DECIMAL(3,1),
@@ -102,6 +110,7 @@ async function seed() {
 
     CREATE TABLE moodboards (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       name VARCHAR(255) NOT NULL,
       theme VARCHAR(255),
       aesthetic VARCHAR(255),
@@ -115,6 +124,7 @@ async function seed() {
 
     CREATE TABLE stylist_chats (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       question TEXT NOT NULL,
       response TEXT,
       category VARCHAR(255),
@@ -125,6 +135,7 @@ async function seed() {
 
     CREATE TABLE fabrics (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       type VARCHAR(255),
       weight VARCHAR(100),
@@ -139,6 +150,7 @@ async function seed() {
 
     CREATE TABLE seasonal_collections (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       season VARCHAR(100),
       year INTEGER,
@@ -153,6 +165,7 @@ async function seed() {
 
     CREATE TABLE bodytype_guides (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       body_type VARCHAR(255) NOT NULL,
       description TEXT,
       recommended_styles TEXT,
@@ -165,6 +178,7 @@ async function seed() {
 
     CREATE TABLE accessories (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       category VARCHAR(255),
       style VARCHAR(255),
@@ -179,6 +193,7 @@ async function seed() {
 
     CREATE TABLE fashion_history (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       era VARCHAR(255) NOT NULL,
       title VARCHAR(255) NOT NULL,
       description TEXT,
@@ -192,6 +207,7 @@ async function seed() {
 
     CREATE TABLE sustainable_fashion (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       name VARCHAR(255) NOT NULL,
       brand VARCHAR(255),
       category VARCHAR(255),
@@ -206,6 +222,7 @@ async function seed() {
 
     CREATE TABLE celebrity_styles (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       celebrity_name VARCHAR(255) NOT NULL,
       style_category VARCHAR(255),
       signature_looks TEXT,
