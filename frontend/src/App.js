@@ -6,6 +6,7 @@ import FeaturePage from './pages/FeaturePage';
 import './App.css';
 
 import Batch03Features from './pages/Batch03Features';
+import CustomViewsPage from './pages/CustomViewsPage';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -38,6 +39,9 @@ function App() {
           } />
           <Route path="/feature/:featureId" element={
             token ? <FeaturePage token={token} user={user} onLogout={handleLogout} /> : <Navigate to="/login" />
+          } />
+          <Route path="/custom-views" element={
+            token ? <CustomViewsPage token={token} user={user} onLogout={handleLogout} /> : <Navigate to="/login" />
           } />
           <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
         </Routes>

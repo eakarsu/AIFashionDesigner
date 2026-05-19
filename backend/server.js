@@ -91,13 +91,21 @@ async function ensureSchemaPatches() {
 
 ensureSchemaPatches()
   .then(() => {
-    
+
 // === Batch 03 Gaps & Frontend Mounts ===
 try {
   const _batch03 = require('./routes/batch03Gaps');
   if (typeof authenticateToken === 'function') app.use('/api', authenticateToken, _batch03);
   else app.use('/api', _batch03);
 } catch (_e) { /* batch03 gap routes optional */ }
+
+// === Custom Views (mounted BEFORE 404 fallback) ===
+try {
+  app.use('/api/custom-views', require('./routes/customViews'));
+} catch (_e) { /* custom views optional */ }
+
+// 404 fallback for unknown /api routes
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found', path: req.originalUrl }));
 
 app.listen(PORT, () => {
       console.log(`Backend server running on port ${PORT}`);
