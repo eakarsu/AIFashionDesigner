@@ -21,6 +21,7 @@ const features = [
   { id: 'celebrity', icon: '🌟', title: 'Celebrity Style Match', desc: 'Recreate celebrity looks on any budget with AI styling guidance', endpoint: '/api/celebrity', aiEndpoint: '/api/ai/celebrity-style' },
   { id: 'wardrobe-audit', icon: '🧹', title: 'Wardrobe Audit', desc: 'AI audit of your wardrobe with keep/donate/repair and gap analysis', endpoint: '/api/wardrobe', aiEndpoint: '/api/ai/wardrobe-audit' },
   { id: 'personal-color', icon: '🎯', title: 'Personal Color Analysis', desc: 'AI seasonal color analysis from your skin, hair, and eye tones', endpoint: '/api/colors', aiEndpoint: '/api/ai/personal-color-analysis' },
+  { id: 'fit-return-risk', icon: '📏', title: 'Fit Return Risk', desc: 'Estimate return risk from garment measurements, stretch, reviews, and try-on confidence', endpoint: '/api/fit-return-risk', route: '/fit-return-risk' },
 ];
 
 export { features };
@@ -58,14 +59,33 @@ export default function Dashboard({ user, token, onLogout }) {
         </div>
       </div>
 
+      <aside
+        data-testid="sidebar-design-views"
+        style={{
+          position: 'fixed', top: 80, left: 16, width: 180, padding: 16,
+          background: '#16213e', border: '1px solid #2a3a5c', borderRadius: 12, zIndex: 10,
+        }}
+      >
+        <h4 style={{ margin: '0 0 8px 0', color: '#e94560', fontSize: 14 }}>Navigation</h4>
+        <button
+          onClick={() => navigate('/custom-views')}
+          style={{
+            width: '100%', padding: '10px 12px', background: '#e94560', color: '#fff',
+            border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600,
+          }}
+        >
+          Design Views
+        </button>
+      </aside>
+
       <div className="dashboard-hero">
         <h2>Your AI-Powered Fashion Studio</h2>
-        <p>17 intelligent fashion tools at your fingertips. Design, analyze, and elevate your style with artificial intelligence.</p>
+        <p>18 intelligent fashion tools at your fingertips. Design, analyze, and elevate your style with artificial intelligence.</p>
       </div>
 
       <div className="feature-grid">
         {features.map(f => (
-          <div key={f.id} className="feature-card" onClick={() => navigate(`/feature/${f.id}`)}>
+          <div key={f.id} className="feature-card" onClick={() => navigate(f.route || `/feature/${f.id}`)}>
             <span className="feature-icon">{f.icon}</span>
             <h3>{f.title}</h3>
             <p>{f.desc}</p>

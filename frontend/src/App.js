@@ -3,10 +3,16 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import FeaturePage from './pages/FeaturePage';
+import FitReturnRisk from './pages/FitReturnRisk';
 import './App.css';
 
 import Batch03Features from './pages/Batch03Features';
 import CustomViewsPage from './pages/CustomViewsPage';
+
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -30,6 +36,10 @@ function App() {
     <Router>
       <div className="app">
         <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
           <Route path="/batch03" element={<Batch03Features />} />
           <Route path="/login" element={
             token ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />
@@ -42,6 +52,9 @@ function App() {
           } />
           <Route path="/custom-views" element={
             token ? <CustomViewsPage token={token} user={user} onLogout={handleLogout} /> : <Navigate to="/login" />
+          } />
+          <Route path="/fit-return-risk" element={
+            token ? <FitReturnRisk token={token} user={user} onLogout={handleLogout} /> : <Navigate to="/login" />
           } />
           <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
         </Routes>

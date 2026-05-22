@@ -60,6 +60,7 @@ app.use('/api/sustainability-score', require('./routes/sustainabilityScore'));
 app.use('/api/rental-integration', require('./routes/rentalIntegration'));
 app.use('/api/style-evolution', require('./routes/styleEvolution'));
 app.use('/api/influencer-collab', require('./routes/influencerCollab'));
+app.use('/api/fit-return-risk', require('./routes/fitReturnRisk'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
