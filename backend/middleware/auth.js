@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 
 function getJwtSecret() {
   const s = process.env.JWT_SECRET;
-  if (!s || s.length < 16) {
-    throw new Error('JWT_SECRET must be set and at least 16 characters');
+  if (!s || s.length < 32) {
+    throw new Error('JWT_SECRET must be set and at least 32 characters');
   }
   return s;
 }

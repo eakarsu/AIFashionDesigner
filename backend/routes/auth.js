@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getJwtSecret } = require('../middleware/auth');
+const authenticateToken = require('../middleware/auth');
+const { getJwtSecret } = authenticateToken;
 const { authRateLimiter } = require('../middleware/rateLimiter');
 
 router.post('/register', authRateLimiter, async (req, res) => {
@@ -43,6 +44,10 @@ router.post('/login', authRateLimiter, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+router.get('/me', authenticateToken, (req, res) => {
+  res.json({ user: req.user });
 });
 
 module.exports = router;
