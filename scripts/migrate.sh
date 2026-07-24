@@ -6,4 +6,6 @@ set -a
 source "$project_root/.env"
 set +a
 : "${DATABASE_URL:?DATABASE_URL is required}"
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$project_root/backend/migrations/001_governed_workflow.sql"
+for migration in "$project_root/backend/migrations/"*.sql; do
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
+done

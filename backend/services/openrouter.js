@@ -1,8 +1,5 @@
 const https = require('https');
 
-const OPENROUTER_API_HOST = 'openrouter.ai';
-const OPENROUTER_API_PATH = '/api/v1/chat/completions';
-
 /**
  * Centralized OpenRouter caller. Returns assistant message string.
  * Throws on transport / API errors.
@@ -16,6 +13,8 @@ function callOpenRouter(prompt, systemPrompt, opts = {}) {
   if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
     return Promise.reject(new Error('OPENROUTER_API_KEY is not configured'));
   }
+  const baseUrl = (process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+  const endpoint = new URL(`${baseUrl}/chat/completions`);
 
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({
@@ -29,8 +28,9 @@ function callOpenRouter(prompt, systemPrompt, opts = {}) {
     });
 
     const options = {
-      hostname: OPENROUTER_API_HOST,
-      path: OPENROUTER_API_PATH,
+      hostname: endpoint.hostname,
+      port: endpoint.port || 443,
+      path: endpoint.pathname + endpoint.search,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,7 +49,9 @@ function callOpenRouter(prompt, systemPrompt, opts = {}) {
           if (parsed.error) {
             return reject(new Error(parsed.error.message || 'OpenRouter API error'));
           }
-          resolve(parsed.choices?.[0]?.message?.content || '');
+          const content = parsed.choices?.[0]?.message?.content;
+          if (!content) return reject(new Error('OpenRouter returned an empty response'));
+          resolve(content);
         } catch (e) {
           reject(new Error('Failed to parse AI response: ' + e.message));
         }
