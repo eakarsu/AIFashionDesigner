@@ -67,7 +67,7 @@ export default function Login({ onLogin }) {
         </form>
 
         <button className="auto-fill-btn" onClick={autoFill}>
-          Quick Login (Demo Account)
+          Auto Fill Demo Credentials
         </button>
 
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#8892b0' }}>
