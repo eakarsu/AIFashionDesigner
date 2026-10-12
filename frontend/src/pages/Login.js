@@ -33,10 +33,14 @@ export default function Login({ onLogin }) {
   };
 
   const autoFill = () => {
-    setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
-    setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
+    if (!demoAvailable) return;
+    setEmail(process.env.REACT_APP_DEMO_EMAIL);
+    setPassword(process.env.REACT_APP_DEMO_PASSWORD);
     setIsRegister(false);
+    setError('');
   };
+  const demoAvailable = process.env.REACT_APP_ENABLE_DEMO_CREDENTIAL_AUTOFILL === 'true'
+    && Boolean(process.env.REACT_APP_DEMO_EMAIL && process.env.REACT_APP_DEMO_PASSWORD);
 
   return (
     <div className="login-page">
@@ -66,9 +70,9 @@ export default function Login({ onLogin }) {
           </button>
         </form>
 
-        <button className="auto-fill-btn" onClick={autoFill}>
-          Auto Fill Demo Credentials
-        </button>
+        {demoAvailable ? <button type="button" className="auto-fill-btn" onClick={autoFill}>
+          Fill Demo Credentials
+        </button> : <p role="status">Demo credentials are not configured for this session.</p>}
 
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: '#8892b0' }}>
           {isRegister ? 'Already have an account? ' : "Don't have an account? "}

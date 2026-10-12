@@ -2,6 +2,7 @@
 // Auto-generated frontend page (lean v0). Wires Custom Feature Suggestions
 // and Gap endpoints (AI counterparts + non-AI features) to backend routes.
 import React, { useState } from 'react';
+import NativeAIReport from '../components/NativeAIReport';
 
 const API_BASE = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) || 'http://localhost:4000/api';
 
@@ -36,19 +37,20 @@ export default function Batch03Features() {
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const current = FEATURES.find(f => f.slug === active) || FEATURES[0];
 
   const sampleRequests = [
       {
-          "label": "Scenario",
-          "value": "Run Batch03 Features for a realistic customer case.\nContext: a team needs a practical recommendation based on incomplete operating data.\nGoal: identify the best action, key risks, missing information, and expected business impact.\nReturn: summary, prioritized action plan, assumptions, and follow-up questions."
+          label: 'Wardrobe scenario',
+          value: `For ${current.label}: a customer needs a versatile outfit for a spring work trip, with three meetings and one dinner. They prefer comfortable shoes, a carry-on wardrobe, and a $300 budget. Suggest options, tradeoffs, and missing fit information.`
       },
       {
-          "label": "Data sample",
-          "value": "Analyze this Batch03 Features data sample.\nInput records:\n- Record 1: urgent, customer impact high, owner unassigned\n- Record 2: medium priority, blocked by missing data\n- Record 3: recurring issue, automation opportunity\nReturn structured findings, anomalies, recommendations, and confidence."
+          label: 'Inventory scenario',
+          value: `For ${current.label}: illustrative wardrobe items are a navy blazer, two cotton shirts, dark jeans, and tan loafers. The customer wants fewer new purchases and easier outfit combinations. Identify useful pairings, gaps, and assumptions; do not claim these are saved inventory records.`
       },
       {
-          "label": "Executive review",
-          "value": "Prepare an executive review for Batch03 Features.\nAudience: business owner, operations lead, and implementation team.\nInclude impact, risk, estimated effort, decision points, and a concise next-step plan."
+          label: 'Sustainability scenario',
+          value: `For ${current.label}: a shopper is comparing a durable cotton jacket, a secondhand wool jacket, and a short-term rental for one event. Discuss likely wear frequency, care needs, cost assumptions, and what verified impact data is still needed.`
       }
   ];
 
@@ -56,7 +58,6 @@ export default function Batch03Features() {
     setInput(value);
     setError(null);
   };
-  const current = FEATURES.find(f => f.slug === active) || FEATURES[0];
 
   async function run() {
     if (!current) return;
@@ -122,11 +123,7 @@ export default function Batch03Features() {
             </button>
           </div>
           {error && (<div style={{ marginTop: 12, padding: 10, background: '#fee2e2', color: '#991b1b', borderRadius: 4, fontSize: 13 }}>{error}</div>)}
-          {results[current.slug] && (
-            <pre style={{ marginTop: 12, padding: 10, background: '#0b1020', color: '#cbd5e1', borderRadius: 4, overflow: 'auto', maxHeight: 360, fontSize: 12 }}>
-              {typeof results[current.slug] === 'string' ? results[current.slug] : JSON.stringify(results[current.slug], null, 2)}
-            </pre>
-          )}
+          {results[current.slug] !== undefined && <NativeAIReport response={results[current.slug]} title={`${current.label} report`} />}
         </div>
       )}
     </div>

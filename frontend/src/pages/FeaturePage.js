@@ -1,8 +1,49 @@
+
+import FullAIExamples, { useFullAIExamples } from "../components/FullAIExamples.jsx";
+import NativeAIReport, { reportText } from "../components/NativeAIReport";
+import useNativeAIRequest from "../components/useNativeAIRequest";
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { features } from './Dashboard';
 
 const API = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
+// Illustrative prompt inputs only. These never stand in for selected records or uploads.
+const aiExampleValues = {
+  occasion: ['Business meeting', 'Outdoor wedding', 'Weekend brunch'],
+  style: ['Tailored and understated', 'Romantic and relaxed', 'Minimalist with bold accessories'],
+  season: ['Spring', 'Summer', 'Fall'],
+  preferences: ['Comfortable natural fabrics and low heels', 'Rewearable pieces and warm colors', 'Easy care layers with one statement piece'],
+  description: ['Linen separates and simple leather shoes', 'A floral midi dress with a light jacket', 'Dark denim, a crisp shirt, and a structured coat'],
+  items: ['White shirt, navy trousers, tan loafers', 'Floral dress, cream cardigan, flat sandals', 'Dark jeans, black boots, wool coat'],
+  skinTone: ['Medium olive complexion', 'Fair complexion with neutral undertones', 'Deep complexion with warm undertones'],
+  skin_tone: ['Medium olive complexion', 'Fair neutral complexion', 'Deep warm complexion'],
+  hairColor: ['Dark brown', 'Auburn', 'Black'],
+  hair_color: ['Dark brown', 'Auburn', 'Black'],
+  eyeColor: ['Hazel', 'Green', 'Brown'],
+  eye_color: ['Hazel', 'Green', 'Brown'],
+  undertone: ['Warm', 'Neutral', 'Cool'],
+  contrast_level: ['Medium', 'Low', 'High'],
+  category: ['Womenswear', 'Accessories', 'Menswear'],
+  year: ['2026', '2027', '2028'],
+  outfitDescription: ['Navy suit, ivory blouse, and tan loafers', 'Sage midi dress with cream sandals', 'Black jeans, white shirt, and leather jacket'],
+  theme: ['Coastal spring', 'Modern garden', 'City evening'],
+  aesthetic: ['Airy and polished', 'Soft and romantic', 'Sleek and graphic'],
+  colors: ['Ivory, sea blue, sand', 'Sage, blush, cream', 'Charcoal, cobalt, white'],
+  message: ['How can I style a navy suit for a daytime meeting?', 'Suggest a rewearable outfit for an outdoor wedding.', 'Build a compact travel wardrobe for a city weekend.'],
+  context: ['Business casual office; prefer comfortable shoes; budget $200', 'Warm afternoon event; avoid dry clean only fabrics; budget $300', 'Three day trip with one dinner; carry on luggage; budget $250'],
+  garmentType: ['Summer dress', 'Lightweight work trousers', 'Winter coat'],
+  climate: ['Warm and humid', 'Temperate with occasional rain', 'Cold and dry'],
+  budget: ['Under $200', '$200 to $500', 'Investment piece up to $800'],
+  bodyType: ['Pear', 'Rectangle', 'Hourglass'],
+  concerns: ['Prefer movement around the hips and a defined shoulder', 'Would like more waist definition without tight clothing', 'Prefer balanced proportions and easy layering'],
+  era: ['1920s', '1970s', '1990s'],
+  topic: ['Evening wear', 'Everyday streetwear', 'Accessories'],
+  currentWardrobe: ['Mostly denim and cotton basics; buy a few new items each season', 'Office staples and occasion wear; repair rarely', 'Small capsule wardrobe; often buy secondhand'],
+  goals: ['Buy fewer, more durable items and repair basics', 'Reduce impulse purchases and rent occasion wear', 'Build a versatile secondhand capsule'],
+  celebrity: ['Zendaya', 'Harry Styles', 'Rihanna'],
+  lifestyle: ['Hybrid office worker who walks to transit', 'Frequent weekend traveler', 'Remote worker attending monthly client meetings']
+};
 
 // Field definitions for each feature
 const featureFields = {
@@ -304,7 +345,11 @@ function renderCellValue(key, value) {
   if (key === 'popularity') {
     return <><div className="popularity-bar"><div className="popularity-fill" style={{ width: `${value}%` }}></div></div>{value}%</>;
   }
-  const str = String(value);
+  let parsed = value;
+  if (typeof value === 'string' && /^[\s]*[\[{]/.test(value)) {
+    try { parsed = JSON.parse(value); } catch (_) { /* Keep the original text. */ }
+  }
+  const str = reportText(parsed);
   return str.length > 50 ? str.substring(0, 50) + '...' : str;
 }
 
@@ -324,6 +369,10 @@ function formatAIResponse(text) {
 }
 
 export default function FeaturePage({ token, user, onLogout }) {
+  const fullAIExamples = useFullAIExamples();
+
+  const nativeAIRequest = useNativeAIRequest();
+
   const { featureId } = useParams();
   const navigate = useNavigate();
   const feature = features.find(f => f.id === featureId);
@@ -336,7 +385,7 @@ export default function FeaturePage({ token, user, onLogout }) {
   const [editItem, setEditItem] = useState(null);
   const [formData, setFormData] = useState({});
   const [aiInputs, setAiInputs] = useState({});
-  const [aiResult, setAiResult] = useState('');
+  const [aiResult, setAiResult] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -372,7 +421,14 @@ export default function FeaturePage({ token, user, onLogout }) {
     if (feature) fetchItems();
   }, [feature, fetchItems]);
 
-  if (!feature || !config) return <div>Feature not found</div>;
+  useEffect(() => {
+    nativeAIRequest.cancel();
+    setAiLoading(false);
+    setAiResult(null);
+    setAiInputs({});
+  }, [nativeAIRequest.cancel, featureId]);
+
+  if (!feature || !config) return <div data-full-ai-workspace="FeaturePage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(aiLoading || loading)} />Feature not found</div>;
 
   const openDetail = (item) => { setSelectedItem(item); setShowModal(true); };
   const closeModal = () => { setShowModal(false); setSelectedItem(null); };
@@ -423,23 +479,22 @@ export default function FeaturePage({ token, user, onLogout }) {
   const handleAI = async () => {
     if (!feature.aiEndpoint) return;
     setAiLoading(true);
-    setAiResult('');
+    setAiResult(null);
     try {
-      const res = await fetch(`${API}${feature.aiEndpoint}`, {
+      const res = await nativeAIRequest.run((signal) => fetch(`${API}${feature.aiEndpoint}`, { ...({
         method: 'POST', headers, body: JSON.stringify(aiInputs)
-      });
+      }), ...({ signal }) }).then(async (response) => { await response.clone().arrayBuffer(); return response; }));
       const data = await res.json();
       if (res.status === 503) {
         setAiResult('AI service unavailable: ' + (data.error || 'API key not configured'));
-      } else if (data.result) {
+      } else if (data.result !== undefined) {
         setAiResult(data.result);
       } else if (data.error) {
         setAiResult('Error: ' + data.error);
-      } else if (data.raw) {
+      } else if (data.raw !== undefined) {
         setAiResult(data.raw);
       } else {
-        // Structured JSON response — render as pretty-printed JSON
-        setAiResult('```json\n' + JSON.stringify(data, null, 2) + '\n```');
+        setAiResult(data);
       }
     } catch (err) {
       setAiResult('Error: Could not connect to AI service');
@@ -449,7 +504,7 @@ export default function FeaturePage({ token, user, onLogout }) {
   };
 
   return (
-    <div className="feature-page">
+    <div className="feature-page" data-full-ai-workspace="FeaturePage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(aiLoading || loading)} />
       <div className="top-bar">
         <h1>AI Fashion Designer</h1>
         <div className="top-bar-right">
@@ -481,17 +536,17 @@ export default function FeaturePage({ token, user, onLogout }) {
                 <div key={field.key} className={`form-group ${field.type === 'textarea' ? 'full-width' : ''}`}>
                   <label>{field.label}</label>
                   {field.type === 'textarea' ? (
-                    <textarea
+                    <textarea data-ai-field={field.key}
                       value={aiInputs[field.key] || ''}
                       onChange={e => setAiInputs(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
+                      placeholder={field.placeholder} data-full-ai-field={fullAIExamples.bind({ current: aiInputs[field.key] || '', change: e => setAiInputs(prev => ({ ...prev, [field.key]: e.target.value })), label: field.label, sample: aiExampleValues[field.key], manual: false, json: false }, "p1-23022", field.key)}
                     />
                   ) : (
-                    <input
+                    <input data-ai-field={field.key}
                       type="text"
                       value={aiInputs[field.key] || ''}
                       onChange={e => setAiInputs(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
+                      placeholder={field.placeholder} data-full-ai-field={fullAIExamples.bind({ current: aiInputs[field.key] || '', change: e => setAiInputs(prev => ({ ...prev, [field.key]: e.target.value })), label: field.label, sample: aiExampleValues[field.key], manual: false, json: false }, "p1-23337", field.key)}
                     />
                   )}
                 </div>
@@ -500,6 +555,7 @@ export default function FeaturePage({ token, user, onLogout }) {
                 <button className="btn btn-gold" onClick={handleAI} disabled={aiLoading} style={{ width: 'auto' }}>
                   {aiLoading ? 'Generating...' : 'Generate with AI'}
                 </button>
+                {nativeAIRequest.busy && <button type="button" className="btn btn-secondary" onClick={nativeAIRequest.cancel}>Cancel request</button>}
               </div>
             </div>
 
@@ -512,12 +568,9 @@ export default function FeaturePage({ token, user, onLogout }) {
               </div>
             )}
 
-            {aiResult && !aiLoading && (
+            {aiResult !== null && !aiLoading && (
               <div className="ai-output">
-                <div
-                  className="ai-output-content"
-                  dangerouslySetInnerHTML={{ __html: formatAIResponse(aiResult) }}
-                />
+                <NativeAIReport response={aiResult} />
               </div>
             )}
           </div>
@@ -594,7 +647,7 @@ export default function FeaturePage({ token, user, onLogout }) {
             <div className="detail-grid">
               {config.fields.map(field => {
                 const val = selectedItem[field.key];
-                if (val === null || val === undefined || val === '') return null;
+                if (val === null || val === undefined) return null;
                 const isLong = String(val).length > 80;
                 return (
                   <div key={field.key} className={`detail-item ${isLong || field.type === 'textarea' ? 'full-width' : ''}`}>
@@ -615,7 +668,9 @@ export default function FeaturePage({ token, user, onLogout }) {
                         </span>
                       ) : field.key === 'popularity' ? (
                         <><div className="popularity-bar"><div className="popularity-fill" style={{ width: `${val}%` }}></div></div> {val}%</>
-                      ) : String(val)}
+                      ) : typeof val === 'object' || (typeof val === 'string' && /^[\s]*[\[{]/.test(val)) ? (
+                        <NativeAIReport response={val} title={field.label} />
+                      ) : reportText(val)}
                     </div>
                   </div>
                 );
@@ -624,6 +679,7 @@ export default function FeaturePage({ token, user, onLogout }) {
             <div className="modal-actions">
               <button className="btn btn-secondary btn-small" onClick={() => openEditForm(selectedItem)}>Edit</button>
               <button className="btn btn-danger btn-small" onClick={() => handleDelete(selectedItem.id)}>Delete</button>
+              <button className="btn btn-secondary btn-small" onClick={closeModal}>Cancel</button>
             </div>
           </div>
         </div>
