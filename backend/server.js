@@ -14,6 +14,8 @@ app.use(cors({ origin: (origin, cb) => !origin || allowedOrigins.includes(origin
 app.use(express.json({ limit: '5mb' }));
 const names = ['auth','outfits','styles','colors','trends','wardrobe','ratings','moodboards','stylist','fabrics','seasonal','bodytype','accessories','history','sustainable','celebrity','ai','calendar'];
 names.forEach((name) => app.use(`/api/${name}`, require(`./routes/${name}`)));
+app.use('/api/tasks', require('./routes/featurePack').tasksRouter);
+app.use('/api/feature-pack', require('./routes/featurePack').router);
 const extensions = [['extensions','extensions'],['agentic-stylist','agenticStylist'],['virtual-wardrobe','virtualWardrobe'],['personal-color-analysis','personalColorAnalysis'],['sustainability-score','sustainabilityScore'],['rental-integration','rentalIntegration'],['style-evolution','styleEvolution'],['influencer-collab','influencerCollab'],['fit-return-risk','fitReturnRisk'],['custom-views','customViews']];
 extensions.forEach(([mount, name]) => app.use(`/api/${mount}`, require(`./routes/${name}`)));
 app.use('/api/governed-workflow', require('./governance/router')(pool));

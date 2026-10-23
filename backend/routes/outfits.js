@@ -9,16 +9,21 @@ router.get('/', auth, async (req, res) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
 
-    const countResult = await pool.query(
-      'SELECT COUNT(*) FROM outfits WHERE user_id = $1',
-      [req.user.id]
-    );
+    const q=String(req.query.q||req.query.search||'').trim(); const conds=['user_id = $1']; const params=[req.user.id];
+    if(req.query.status){ params.push(req.query.status); conds.push(`status = $${params.length}`); }
+    if(req.query.season){ params.push(req.query.season); conds.push(`season = $${params.length}`); }
+    if(req.query.style){ params.push(req.query.style); conds.push(`style = $${params.length}`); }
+    const where=`WHERE ${conds.join(' AND ')}`;
+    const countResult = await pool.query(`SELECT COUNT(*) FROM outfits ${where}`, params);
     const total = parseInt(countResult.rows[0].count);
-
-    const result = await pool.query(
-      'SELECT * FROM outfits WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
-      [req.user.id, limit, offset]
-    );
+    let allRows=(await pool.query(`SELECT * FROM outfits ${where} ORDER BY created_at DESC LIMIT 1000`, params)).rows;
+    if(q) allRows=allRows.filter(r=>JSON.stringify(r).toLowerCase().includes(q.toLowerCase()));
+    if(req.query.format==='csv'||req.query.format==='json'){
+      const {toCSV}=require('./featurePack');
+      if(req.query.format==='csv'){ res.setHeader('Content-Type','text/csv'); res.setHeader('Content-Disposition','attachment; filename="outfits.csv"'); return res.send(toCSV(allRows)); }
+      res.setHeader('Content-Disposition','attachment; filename="outfits.json"'); return res.json(allRows);
+    }
+    const result = { rows: allRows.slice(offset, offset+limit) };
 
     res.json({
       data: result.rows,
